@@ -7,62 +7,50 @@ pipeline {
     }
 
     stages {
-            stage('Checkout') {
-                steps {
-                    script {
-                        echo 'Cloning repository...'
-                        git branch: 'main', url: 'https://github.com/your-repo/your-project.git'
-                    }
-                }
-            }
-
-            stage('Build') {
-                steps {
-                    script {
-                        echo 'Building the application...'
-                        bat 'mvn clean package -DskipTests'
-                    }
-                }
-            }
-
-            stage('Run Tests') {
-                steps {
-                    script {
-                        echo 'Running unit tests...'
-                        bat 'mvn test'
-                    }
-                }
-            }
-
-            stage('Package') {
-                steps {
-                    script {
-                        echo 'Packaging the application...'
-                        bat 'mvn clean install'
-                    }
-                }
-            }
-
-            stage('Deploy') {
-                steps {
-                    script {
-                        echo 'Deploying the application...'
-                        bat '''
-                            for /f "delims=" %%i in ('dir /b target\\*.jar') do set JAR_FILE=%%i
-                            echo Deploying %JAR_FILE%...
-                            copy target\\%JAR_FILE% C:\\deploy\\
-                        '''
-                    }
-                }
+        stage('Clone Repository') {
+            steps {
+                git branch: 'main', url: 'https://github.com/JeganS21/healthcare-app.git'
             }
         }
 
-        post {
-            success {
-                echo 'Build and deployment successful!'
+        stage('Build') {
+            steps {
+                bat '%MVN_HOME%\\bin\\mvn clean package'
             }
-            failure {
-                echo 'Build failed!'
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    def jarFile = getJarFile()
+                    if (jarFile) {
+                        echo "Deploying ${jarFile}..."
+                        bat "start /B java -jar \"${jarFile}\" > app.log 2>&1"
+                        echo "Application deployed successfully!"
+                    } else {
+                        error "JAR file not found in target/ directory"
+                    }
+                }
             }
         }
     }
+
+    post {
+        success {
+            echo 'Build and deployment successful!'
+        }
+        failure {
+            echo 'Build failed!'
+        }
+    }
+}
+
+/** Find the JAR file inside the target directory **/
+def getJarFile() {
+    def jarFile = ''
+    def output = bat(script: 'for /F "delims=" %%i in (\'dir /b target\\*.jar\') do @echo %%i', returnStdout: true).trim()
+    if (output) {
+        jarFile = "target\\" + output
+    }
+    return jarFile
+}
