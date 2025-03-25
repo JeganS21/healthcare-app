@@ -2,28 +2,34 @@ pipeline {
     agent any
 
     environment {
-        JAVA_HOME = "C:\\Program Files\\Java\\jdk-17"  // Adjust for your system
-        MVN_HOME = "C:\\Users\\jegan\\OneDrive\\Documents\\Essential Bin Paths\\apache-maven-3.9.9\\bin\\mvn"
+        JAVA_HOME = "C:\\Program Files\\Java\\jdk-17"
+        MVN_HOME = "C:\\Users\\jegan\\OneDrive\\Documents\\Essential Bin Paths\\apache-maven-3.9.9"
     }
+
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/JeganS21/healthcare-app.git'
+                git branch: 'main', url: 'https://github.com/JeganS21/healthcare-app.git'
             }
         }
 
         stage('Build') {
             steps {
-                bat '"%MVN_HOME%" clean package'
+                bat '"%MVN_HOME%\\bin\\mvn" clean package'
             }
         }
 
         stage('Deploy') {
             steps {
-                bat '''
-                start /B java -jar target\\*.jar > app.log 2>&1
-                echo %ERRORLEVEL% > app.pid
-                '''
+                script {
+                    def jarFile = findJar()
+                    if (jarFile) {
+                        bat "start /B java -jar ${jarFile} > app.log 2>&1"
+                        echo "Application deployed successfully!"
+                    } else {
+                        error "JAR file not found in target/ directory"
+                    }
+                }
             }
         }
     }
@@ -36,4 +42,10 @@ pipeline {
             echo 'Build failed!'
         }
     }
+}
+
+/** Helper function to find the JAR file **/
+def findJar() {
+    def files = new File("target").listFiles().findAll { it.name.endsWith(".jar") }
+    return files ? files[0].path.replace("\\", "\\\\") : null
 }
