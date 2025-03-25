@@ -2,10 +2,9 @@ pipeline {
     agent any
 
     environment {
-        JAVA_HOME = "C:\Program Files\Java\jdk-17"  // Adjust for your system
-        MVN_HOME = "C:\Users\jegan\OneDrive\Documents\Essential Bin Paths\apache-maven-3.9.9\bin\mvn"
+        JAVA_HOME = "C:\\Program Files\\Java\\jdk-17"  // Adjust for your system
+        MVN_HOME = "C:\\Users\\jegan\\OneDrive\\Documents\\Essential Bin Paths\\apache-maven-3.9.9\\bin\\mvn"
     }
-
     stages {
         stage('Clone Repository') {
             steps {
@@ -15,15 +14,15 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'mvn clean package'
+                bat '"%MVN_HOME%" clean package'
             }
         }
 
         stage('Deploy') {
             steps {
-                sh '''
-                nohup java -jar target/*.jar > app.log 2>&1 &
-                echo $! > app.pid
+                bat '''
+                start /B java -jar target\\*.jar > app.log 2>&1
+                echo %ERRORLEVEL% > app.pid
                 '''
             }
         }
