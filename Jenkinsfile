@@ -15,7 +15,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                bat '"%MVN_HOME%\\bin\\mvn" clean package'
+                bat "\"${MVN_HOME}\\bin\\mvn\" clean package"
             }
         }
 
@@ -24,7 +24,7 @@ pipeline {
                 script {
                     def jarFile = findJar()
                     if (jarFile) {
-                        bat "start /B java -jar ${jarFile} > app.log 2>&1"
+                        bat "start /B java -jar \"${jarFile}\" > app.log 2>&1"
                         echo "Application deployed successfully!"
                     } else {
                         error "JAR file not found in target/ directory"
@@ -46,6 +46,6 @@ pipeline {
 
 /** Helper function to find the JAR file **/
 def findJar() {
-    def files = new File("target").listFiles().findAll { it.name.endsWith(".jar") }
-    return files ? files[0].path.replace("\\", "\\\\") : null
+    def files = findFiles(glob: 'target/*.jar')
+    return files ? files[0].path : null
 }
