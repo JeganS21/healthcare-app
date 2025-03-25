@@ -7,71 +7,62 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                script {
-                    echo 'Cloning repository...'
-                    git branch: 'main', url: 'https://github.com/JeganS21/healthcare-app.git'
+            stage('Checkout') {
+                steps {
+                    script {
+                        echo 'Cloning repository...'
+                        git branch: 'main', url: 'https://github.com/your-repo/your-project.git'
+                    }
+                }
+            }
+
+            stage('Build') {
+                steps {
+                    script {
+                        echo 'Building the application...'
+                        bat 'mvn clean package -DskipTests'
+                    }
+                }
+            }
+
+            stage('Run Tests') {
+                steps {
+                    script {
+                        echo 'Running unit tests...'
+                        bat 'mvn test'
+                    }
+                }
+            }
+
+            stage('Package') {
+                steps {
+                    script {
+                        echo 'Packaging the application...'
+                        bat 'mvn clean install'
+                    }
+                }
+            }
+
+            stage('Deploy') {
+                steps {
+                    script {
+                        echo 'Deploying the application...'
+                        bat '''
+                            for /f "delims=" %%i in ('dir /b target\\*.jar') do set JAR_FILE=%%i
+                            echo Deploying %JAR_FILE%...
+                            copy target\\%JAR_FILE% C:\\deploy\\
+                        '''
+                    }
                 }
             }
         }
 
-        stage('Build') {
-            steps {
-                script {
-                    echo 'Building the application...'
-                    sh 'mvn clean package -DskipTests'
-                }
+        post {
+            success {
+                echo 'Build and deployment successful!'
             }
-        }
-
-        stage('Run Tests') {
-            steps {
-                script {
-                    echo 'Running unit tests...'
-                    sh 'mvn test'
-                }
-            }
-        }
-
-        stage('Package') {
-            steps {
-                script {
-                    echo 'Packaging the application...'
-                    sh 'mvn clean install'
-                }
-            }
-        }
-
-        stage('Approve Script Permissions') {
-            steps {
-                script {
-                    echo 'Approving script permissions...'
-                    sh 'echo "new java.io.File java.lang.String" >> /var/jenkins_home/approved-signatures'
-                }
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                script {
-                    echo 'Deploying the application...'
-                    sh '''
-                        JAR_FILE=$(ls target/*.jar | head -n 1)
-                        echo "Deploying $JAR_FILE..."
-                        cp $JAR_FILE /opt/app/
-                    '''
-                }
+            failure {
+                echo 'Build failed!'
             }
         }
     }
-
-    post {
-        success {
-            echo 'Build and deployment successful!'
-        }
-        failure {
-            echo 'Build failed!'
-        }
-    }
-}
