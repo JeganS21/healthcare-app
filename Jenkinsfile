@@ -7,28 +7,60 @@ pipeline {
     }
 
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/JeganS21/healthcare-app.git'
+                script {
+                    echo 'Cloning repository...'
+                    git branch: 'main', url: 'https://github.com/JeganS21/healthcare-app.git'
+                }
             }
         }
 
         stage('Build') {
             steps {
-                bat '"%MVN_HOME%\\bin\\mvn" clean package'
+                script {
+                    echo 'Building the application...'
+                    sh 'mvn clean package -DskipTests'
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                script {
+                    echo 'Running unit tests...'
+                    sh 'mvn test'
+                }
+            }
+        }
+
+        stage('Package') {
+            steps {
+                script {
+                    echo 'Packaging the application...'
+                    sh 'mvn clean install'
+                }
+            }
+        }
+
+        stage('Approve Script Permissions') {
+            steps {
+                script {
+                    echo 'Approving script permissions...'
+                    sh 'echo "new java.io.File java.lang.String" >> /var/jenkins_home/approved-signatures'
+                }
             }
         }
 
         stage('Deploy') {
             steps {
                 script {
-                    def jarFile = findJar()
-                    if (jarFile) {
-                        bat "start /B java -jar ${jarFile} > app.log 2>&1"
-                        echo "Application deployed successfully!"
-                    } else {
-                        error "JAR file not found in target/ directory"
-                    }
+                    echo 'Deploying the application...'
+                    sh '''
+                        JAR_FILE=$(ls target/*.jar | head -n 1)
+                        echo "Deploying $JAR_FILE..."
+                        cp $JAR_FILE /opt/app/
+                    '''
                 }
             }
         }
@@ -42,10 +74,4 @@ pipeline {
             echo 'Build failed!'
         }
     }
-}
-
-/** Helper function to find the JAR file **/
-def findJar() {
-    def files = new File("target").listFiles().findAll { it.name.endsWith(".jar") }
-    return files ? files[0].path.replace("\\", "\\\\") : null
 }
