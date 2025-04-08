@@ -25,6 +25,7 @@ pipeline {
             steps {
                 bat '''
                 for /f "tokens=5" %%a in ('netstat -ano ^| findstr :%APP_PORT%') do taskkill /PID %%a /F
+                exit /b 0
                 '''
             }
         }
