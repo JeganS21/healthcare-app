@@ -35,10 +35,12 @@ pipeline {
                 script {
                     def jarFile = findJar()
                     if (jarFile) {
-                        bat '''
-                        del app.log
-                        start /B java -jar "${jarFile}" > app.log 2>&1
-                        '''
+                         withEnv(["jarFile=${jarFile}"]) {
+                                            bat '''
+                                            del app.log
+                                            start /B java -jar %jarFile% > app.log 2>&1
+                                            '''
+                                        }
                         echo "Application deployed successfully!"
                     } else {
                         error "JAR file not found in target/ directory"
